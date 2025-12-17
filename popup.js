@@ -54,7 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
         remainingPointsEl.classList.add('loading');
         processedTasksEl.classList.add('loading');
 
+
         setLoadingState(true);
+        copyBtn.classList.add('hidden');
 
         // Get the current active tab
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Copy total points to clipboard
     copyBtn.addEventListener('click', async () => {
         const totalPoints = totalPointsEl.textContent.trim();
-        
+
         // Don't copy if it's a placeholder
         if (totalPoints === '-' || totalPoints === '...' || !totalPoints) {
             return;
@@ -120,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await navigator.clipboard.writeText(totalPoints);
-            
+
             // Visual feedback: change icon to checkmark temporarily
             const originalIcon = copyIcon.innerHTML;
             copyIcon.innerHTML = `
@@ -128,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             copyIcon.classList.remove('text-gray-500', 'hover:text-indigo-600');
             copyIcon.classList.add('text-green-500');
-            
+
             // Restore original icon after 2 seconds
             setTimeout(() => {
                 copyIcon.innerHTML = originalIcon;
@@ -161,6 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? total.toString()
                 : total.toFixed(2);
             totalPointsEl.textContent = formattedTotal;
+
+            // Show copy button if total points > 0
+            if (total > 0) {
+                copyBtn.classList.remove('hidden');
+            } else {
+                copyBtn.classList.add('hidden');
+            }
 
             // Display remaining count
             const remaining = request.remaining !== undefined ? request.remaining : 0;

@@ -35,14 +35,21 @@
             <!-- Total Story Points Card -->
             <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                 <div class="flex items-center justify-center gap-4  mb-2 ">
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-widertext-center">Total Story
-                    Points</p>
-                    <button id="copyBtn" class="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300" title="Copy total points">
-                        <svg id="copyIcon" class="w-5 h-5 text-gray-500 hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-widertext-center">Total Story
+                        Points</p>
+                    <button id="copyBtn"
+                        class="hidden cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                        title="Copy total points">
+                        <svg id="copyIcon" class="w-5 h-5 text-gray-500 hover:text-indigo-600 transition-colors"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                            </path>
                         </svg>
                     </button>
-                    </div>
+                    <!-- Force include dynamic classes -->
+                    <div class="hidden text-green-500 text-red-500"></div>
+                </div>
                 <div class="flex items-baseline justify-center space-x-1">
                     <p id="totalPoints"
                         class="text-5xl font-medium bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -78,7 +85,7 @@
         <!-- Calculate Button -->
         <div class="flex item-center gap-4">
             <button id="calculateBtn"
-                class="flex-1 w-full px-6 py-3.5 font-semibold text-white bg-blue-500 rounded-xl shadow-sm hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2">
+                class="cursor-pointer flex-1 w-full px-6 py-3.5 font-semibold text-white bg-blue-500 rounded-xl shadow-sm hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2">
                 <svg id="calculateIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
@@ -87,7 +94,7 @@
                 <span id="calculateText">Calculate Total</span>
             </button>
             <button id="reloadBtn"
-                class="px-6 py-3.5 font-semibold text-white bg-blue-500 rounded-xl shadow-sm hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2">
+                class="cursor-pointer px-6 py-3.5 font-semibold text-white bg-blue-500 rounded-xl shadow-sm hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2">
                 <svg id="reloadIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
