@@ -185,14 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const formattedOriginal = originalEstimate % 1 === 0
                 ? originalEstimate.toString()
                 : originalEstimate.toFixed(1);
-            document.getElementById('totalOriginalEstimate').textContent = formattedOriginal + 'h';
+            totalOriginalEstimateEl.textContent = formattedOriginal + 'h';
 
             // Display time spent
             const timeSpent = request.timeSpent !== undefined ? request.timeSpent : 0;
             const formattedSpent = timeSpent % 1 === 0
                 ? timeSpent.toString()
                 : timeSpent.toFixed(1);
-            document.getElementById('timeSpent').textContent = formattedSpent + 'h';
+            timeSpentEl.textContent = formattedSpent + 'h';
 
             // Show copy button if total points > 0
             if (total > 0) {

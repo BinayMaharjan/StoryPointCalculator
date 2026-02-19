@@ -35,14 +35,6 @@
             }
         }
         
-        // If no units found but it's a number, return it as is (might be points)
-        if (totalHours === 0) {
-            const numericValue = parseFloat(cleanStr);
-            if (!isNaN(numericValue) && cleanStr.trim() === numericValue.toString()) {
-                return numericValue;
-            }
-        }
-        
         return totalHours;
     }
 
@@ -144,7 +136,9 @@
             const fallbackDivs = document.querySelectorAll('[data-testid="native-issue-table.common.ui.issue-cells.fallback.div"]');
             fallbackDivs.forEach((div) => {
                 const text = div.textContent.trim();
-                if (!(text.toLowerCase().includes('hour') || text.toLowerCase().includes('minute') || text.toLowerCase().includes('h ') || text.toLowerCase().includes('m ') || (text.includes('h') && text.includes('m')))) {
+                // Match patterns like "2h", "30m", "2d", "1w", "2h 30m", "1 hour", "30 minutes"
+                const timePattern = /\d+\s*(weeks?|days?|hours?|minutes?|w|d|h|m)\b/i;
+                if (!timePattern.test(text)) {
                     return;
                 }
 
