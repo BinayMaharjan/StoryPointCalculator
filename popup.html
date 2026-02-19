@@ -57,8 +57,8 @@
                 </div>
             </div>
             <!-- Remaining Story Points Card -->
-            <div class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100 divide-y divide-gray-100">
-                <div class="flex items-center gap-4 justify-between">
+            <div class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100 divide-y divide-gray-100 space-y-1">
+                <div class="flex items-center gap-4 justify-between pb-1">
                     <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Remaining Tasks
                     </p>
@@ -66,9 +66,8 @@
                         -
                     </p>
                 </div>
-
                 <!-- Processed Tasks Card -->
-                <div class="flex items-center gap-4 justify-between">
+                <div class="flex items-center gap-4 justify-between pb-1">
                     <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total Tasks
                     </p>
@@ -76,8 +75,19 @@
                         -
                     </p>
                 </div>
+                <!-- Monthly Average Time Card -->
+                <div class="flex items-center gap-4 justify-between pb-1">
+                    <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Monthly Average Time
+                        <span class="text-[10px] text-gray-400">6.5h per day * 22 days</span>
+                    </p>
+                    <p id="monthlyAverageTime"
+                        class="w-14 flex-shrink-0 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        143h
+                    </p>
+                </div>
                 <!-- Total original estimate Card -->
-                <div class="flex items-center gap-4 justify-between">
+                <div class="flex items-center gap-4 justify-between pb-1">
                     <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Total original estimate
                     </p>
@@ -85,9 +95,8 @@
                         -
                     </p>
                 </div>
-
                 <!-- Time spent Card -->
-                <div class="flex items-center gap-4 justify-between">
+                <div class="flex items-center gap-4 justify-between pb-1">
                     <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Time spent
                     </p>
@@ -95,7 +104,6 @@
                         -
                     </p>
                 </div>
-
             </div>
         </div>
         <!-- Calculate Button -->
