@@ -164,6 +164,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 : total.toFixed(2);
             totalPointsEl.textContent = formattedTotal;
 
+            // Display original estimate
+            const originalEstimate = request.originalEstimate !== undefined ? request.originalEstimate : 0;
+            const formattedOriginal = originalEstimate % 1 === 0
+                ? originalEstimate.toString()
+                : originalEstimate.toFixed(1);
+            document.getElementById('totalOriginalEstimate').textContent = formattedOriginal + 'h';
+
+            // Display time spent
+            const timeSpent = request.timeSpent !== undefined ? request.timeSpent : 0;
+            const formattedSpent = timeSpent % 1 === 0
+                ? timeSpent.toString()
+                : timeSpent.toFixed(1);
+            document.getElementById('timeSpent').textContent = formattedSpent + 'h';
+
             // Show copy button if total points > 0
             if (total > 0) {
                 copyBtn.classList.remove('hidden');

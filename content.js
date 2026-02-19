@@ -5,69 +5,198 @@
  */
 (function () {
 
-    // Function to calculate story points from current DOM and return processed element IDs
+    /**
+     * Parses Jira time strings like "2h 30m", "1 hour, 30 minutes", "3d", etc.
+     * Converts to hours.
+     */
+    function parseJiraTime(timeStr) {
+        if (!timeStr || timeStr === 'None') return 0;
+        
+        let totalHours = 0;
+        // Match numbers followed by units. Handle "1 day, 4 hours" as well as "1d 4h"
+        const regex = /(\d+(?:\.\d+)?)\s*(weeks?|w|days?|d|hours?|h|minutes?|m)/gi;
+        let match;
+        
+        // Clean up the string a bit (remove commas)
+        const cleanStr = timeStr.replace(/,/g, '');
+        
+        while ((match = regex.exec(cleanStr)) !== null) {
+            const value = parseFloat(match[1]);
+            const unit = match[2].toLowerCase();
+            
+            if (unit.startsWith('w')) {
+                totalHours += value * 40; // Assuming 5-day work week, 8h/day
+            } else if (unit.startsWith('d')) {
+                totalHours += value * 8; // Assuming 8h/day
+            } else if (unit.startsWith('h')) {
+                totalHours += value;
+            } else if (unit.startsWith('m')) {
+                totalHours += value / 60;
+            }
+        }
+        
+        // If no units found but it's a number, return it as is (might be points)
+        if (totalHours === 0) {
+            const numericValue = parseFloat(cleanStr);
+            if (!isNaN(numericValue) && cleanStr.trim() === numericValue.toString()) {
+                return numericValue;
+            }
+        }
+        
+        return totalHours;
+    }
+
+    function getColumnIndices() {
+        const headers = document.querySelectorAll('thead th');
+        const indices = {
+            originalEstimate: -1,
+            timeSpent: -1,
+            storyPoints: -1
+        };
+
+        headers.forEach((th, index) => {
+            const label = th.getAttribute('aria-label') || th.textContent.trim();
+            if (label.toLowerCase().includes('original estimate')) indices.originalEstimate = index;
+            if (label.toLowerCase().includes('time spent')) indices.timeSpent = index;
+            if (label.toLowerCase().includes('story points')) indices.storyPoints = index;
+        });
+
+        return indices;
+    }
+
+    // Function to calculate story points and time tracking from current DOM
     function calculateStoryPoints(processedElements) {
         let total = 0;
+        let totalOriginalEstimate = 0;
+        let totalTimeSpent = 0;
         let remainingCount = 0;
         const newProcessed = new Set();
 
-        // Find story point elements using the data-testid attribute
-        const storyPointElements = document.querySelectorAll('[data-testid="issue-field-story-point-estimate-readview-full.ui.story-point-estimate"]');
+        const indices = getColumnIndices();
+        const rows = document.querySelectorAll('tbody tr[data-vc="issue-row"]');
 
-        storyPointElements.forEach((element) => {
-            // Try to find a unique identifier for this row
-            // Look for the issue key or row identifier
-            let elementId = null;
+        if (rows.length > 0) {
+            // Table view extraction
+            rows.forEach(row => {
+                const elementId = getElementId(row);
+                if (!elementId || processedElements.has(elementId)) return;
+                processedElements.add(elementId);
+                newProcessed.add(elementId);
 
-            // Try to find the parent row and get issue key or row identifier
-            const row = element.closest('tr') || element.closest('[role="row"]');
-            if (row) {
-                // Try to find issue key link
-                const issueLink = row.querySelector('a[href*="/browse/"]');
-                if (issueLink) {
-                    elementId = issueLink.href || issueLink.textContent.trim();
-                } else {
-                    // Use row index and first cell content as fallback
-                    const firstCell = row.querySelector('td, [role="gridcell"]');
-                    if (firstCell) {
-                        elementId = firstCell.textContent.trim().substring(0, 50);
+                const cells = row.querySelectorAll('td');
+
+                // Story Points
+                if (indices.storyPoints !== -1 && cells[indices.storyPoints]) {
+                    const text = cells[indices.storyPoints].textContent.trim();
+                    if (text && text !== 'None' && !isNaN(parseFloat(text))) {
+                        total += parseFloat(text);
+                    } else if (text === 'None' || text === '') {
+                        remainingCount++;
                     }
                 }
+
+                // Original Estimate
+                if (indices.originalEstimate !== -1 && cells[indices.originalEstimate]) {
+                    const text = cells[indices.originalEstimate].textContent.trim();
+                    totalOriginalEstimate += parseJiraTime(text);
+                }
+
+                // Time Spent
+                if (indices.timeSpent !== -1 && cells[indices.timeSpent]) {
+                    const text = cells[indices.timeSpent].textContent.trim();
+                    totalTimeSpent += parseJiraTime(text);
+                }
+            });
+        } else {
+            // Fallback for single issue view or non-standard table
+            // 1. Find story point elements
+            const storyPointElements = document.querySelectorAll('[data-testid="issue-field-story-point-estimate-readview-full.ui.story-point-estimate"]');
+            storyPointElements.forEach((element) => {
+                const elementId = getElementId(element);
+                if (!elementId || processedElements.has(elementId)) return;
+                processedElements.add(elementId);
+                newProcessed.add(elementId);
+
+                const text = element.textContent.trim();
+                if (text && text !== 'None' && !isNaN(parseFloat(text))) {
+                    total += parseFloat(text);
+                } else if (text === 'None' || text === '') {
+                    remainingCount++;
+                }
+            });
+
+            // 2. Find Time Tracking containers
+            const timeTrackingContainers = document.querySelectorAll('[data-testid="issue-field-inline-edit-read-view-container.ui.container"]');
+            timeTrackingContainers.forEach((container) => {
+                const editButton = container.querySelector('button[aria-label="Edit Time tracking"]');
+                if (!editButton) return;
+
+                const elementId = getElementId(container) + "-oe";
+                if (processedElements.has(elementId)) return;
+                processedElements.add(elementId);
+                newProcessed.add(elementId);
+
+                const text = container.textContent.trim();
+                totalOriginalEstimate += parseJiraTime(text);
+            });
+
+            // 3. Find Time Spent
+            const fallbackDivs = document.querySelectorAll('[data-testid="native-issue-table.common.ui.issue-cells.fallback.div"]');
+            fallbackDivs.forEach((div) => {
+                const text = div.textContent.trim();
+                if (!(text.toLowerCase().includes('hour') || text.toLowerCase().includes('minute') || text.toLowerCase().includes('h ') || text.toLowerCase().includes('m ') || (text.includes('h') && text.includes('m')))) {
+                    return;
+                }
+
+                const elementId = getElementId(div) + "-ts";
+                if (processedElements.has(elementId)) return;
+                processedElements.add(elementId);
+                newProcessed.add(elementId);
+
+                totalTimeSpent += parseJiraTime(text);
+            });
+        }
+
+        return { 
+            total, 
+            totalOriginalEstimate,
+            totalTimeSpent,
+            remainingCount, 
+            newProcessed, 
+            processedCount: processedElements.size 
+        };
+    }
+
+    // Helper to get a unique ID for an element
+    function getElementId(element) {
+        // Try to find the parent row and get issue key
+        const row = element.closest('tr') || element.closest('[role="row"]');
+        if (row) {
+            const issueLink = row.querySelector('a[href*="/browse/"]');
+            if (issueLink) {
+                return issueLink.href || issueLink.textContent.trim();
             }
-
-            // If we can't find a unique ID, use element's position in DOM
-            if (!elementId) {
-                elementId = Array.from(element.parentElement?.children || []).indexOf(element).toString();
+            const firstCell = row.querySelector('td, [role="gridcell"]');
+            if (firstCell) {
+                return firstCell.textContent.trim().substring(0, 50);
             }
+        }
+        
+        // If not in a row, try to find issue key in the whole document (for issue view)
+        const issueKeyEl = document.querySelector('[data-testid="issue-field-key.ui.debug.info-element"], a[href*="/browse/"]');
+        if (issueKeyEl) {
+            return issueKeyEl.textContent.trim();
+        }
 
-            // Skip if we've already processed this element
-            if (processedElements.has(elementId)) {
-                return;
-            }
-
-            // Mark as processed
-            processedElements.add(elementId);
-            newProcessed.add(elementId);
-
-            const text = element.textContent.trim();
-
-            // Process numeric story points
-            if (text && text !== 'None' && !isNaN(parseFloat(text))) {
-                const points = parseFloat(text);
-                total += points;
-            } else if (text === 'None' || text === '') {
-                // Count issues with "None" or empty story points
-                remainingCount++;
-            }
-        });
-
-        return { total, remainingCount, newProcessed, processedCount: processedElements.size };
+        return Array.from(element.parentElement?.children || []).indexOf(element).toString();
     }
 
     // Function to load all table data by scrolling and accumulate story points incrementally
     async function loadAllTableData() {
         const processedElements = new Set(); // Track processed rows to avoid duplicates
         let accumulatedTotal = 0;
+        let accumulatedOriginalEstimate = 0;
+        let accumulatedTimeSpent = 0;
         let accumulatedRemaining = 0;
         let scrollAttempts = 0;
         const maxScrollAttempts = 200; // Prevent infinite loops
@@ -80,7 +209,13 @@
         if (!jiraScrollContainer) {
             // Fallback calculation
             const result = calculateStoryPoints(processedElements);
-            return { total: result.total, remainingCount: result.remainingCount, processedCount: result.processedCount };
+            return { 
+                total: result.total, 
+                totalOriginalEstimate: result.totalOriginalEstimate,
+                totalTimeSpent: result.totalTimeSpent,
+                remainingCount: result.remainingCount, 
+                processedCount: result.processedCount 
+            };
         }
 
         let maxScrollHeight = jiraScrollContainer.scrollHeight;
@@ -96,6 +231,8 @@
             // Calculate story points from currently visible rows
             const result = calculateStoryPoints(processedElements);
             accumulatedTotal += result.total;
+            accumulatedOriginalEstimate += result.totalOriginalEstimate;
+            accumulatedTimeSpent += result.totalTimeSpent;
             accumulatedRemaining += result.remainingCount;
 
             // If no new data found, increment counter
@@ -117,6 +254,8 @@
                 // One final check for any remaining items
                 const finalResult = calculateStoryPoints(processedElements);
                 accumulatedTotal += finalResult.total;
+                accumulatedOriginalEstimate += finalResult.totalOriginalEstimate;
+                accumulatedTimeSpent += finalResult.totalTimeSpent;
                 accumulatedRemaining += finalResult.remainingCount;
                 break;
             }
@@ -140,29 +279,42 @@
 
         const finalResult = calculateStoryPoints(processedElements);
         accumulatedTotal += finalResult.total;
+        accumulatedOriginalEstimate += finalResult.totalOriginalEstimate;
+        accumulatedTimeSpent += finalResult.totalTimeSpent;
         accumulatedRemaining += finalResult.remainingCount;
 
-        return { total: accumulatedTotal, remainingCount: accumulatedRemaining, processedCount: processedElements.size };
+        return { 
+            total: accumulatedTotal, 
+            totalOriginalEstimate: accumulatedOriginalEstimate,
+            totalTimeSpent: accumulatedTimeSpent,
+            remainingCount: accumulatedRemaining, 
+            processedCount: processedElements.size 
+        };
     }
 
     // Main execution: Load all data incrementally and accumulate totals
     (async () => {
         try {
-            const { total, remainingCount, processedCount } = await loadAllTableData();
+            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, processedCount } = await loadAllTableData();
             // Send both totals back to the popup.js
             chrome.runtime.sendMessage({
                 action: "sendTotal",
                 total: total,
+                originalEstimate: totalOriginalEstimate,
+                timeSpent: totalTimeSpent,
                 remaining: remainingCount,
                 processed: processedCount
             });
         } catch (error) {
+            console.error("Storypoint calculation error:", error);
             // Fallback: calculate with whatever is available
             const processedElements = new Set();
-            const { total, remainingCount, processedCount } = calculateStoryPoints(processedElements);
+            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, processedCount } = calculateStoryPoints(processedElements);
             chrome.runtime.sendMessage({
                 action: "sendTotal",
                 total: total,
+                originalEstimate: totalOriginalEstimate,
+                timeSpent: totalTimeSpent,
                 remaining: remainingCount,
                 processed: processedCount
             });
