@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalPointsEl = document.getElementById('totalPoints');
     const remainingPointsEl = document.getElementById('remainingPoints');
     const processedTasksEl = document.getElementById('processedTasks');
+    const totalOriginalEstimateEl = document.getElementById('totalOriginalEstimate');
+    const timeSpentEl = document.getElementById('timeSpent');
     const reloadBtn = document.getElementById('reloadBtn');
     const copyBtn = document.getElementById('copyBtn');
     const copyIcon = document.getElementById('copyIcon');
@@ -50,9 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
         totalPointsEl.textContent = '...';
         remainingPointsEl.textContent = '...';
         processedTasksEl.textContent = '...';
+        totalOriginalEstimateEl.textContent = '...';
+        timeSpentEl.textContent = '...';
         totalPointsEl.classList.add('loading');
         remainingPointsEl.classList.add('loading');
         processedTasksEl.classList.add('loading');
+        totalOriginalEstimateEl.classList.add('loading');
+        timeSpentEl.classList.add('loading');
 
 
         setLoadingState(true);
@@ -70,9 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         totalPointsEl.textContent = '—';
                         remainingPointsEl.textContent = '—';
                         processedTasksEl.textContent = '—';
+                        totalOriginalEstimateEl.textContent = '—';
+                        timeSpentEl.textContent = '—';
                         totalPointsEl.classList.remove('loading');
                         remainingPointsEl.classList.remove('loading');
                         processedTasksEl.classList.remove('loading');
+                        totalOriginalEstimateEl.classList.remove('loading');
+                        timeSpentEl.classList.remove('loading');
                         setLoadingState(false);
                     }
                 });
@@ -80,9 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalPointsEl.textContent = '—';
                 remainingPointsEl.textContent = '—';
                 processedTasksEl.textContent = '—';
+                totalOriginalEstimateEl.textContent = '—';
+                timeSpentEl.textContent = '—';
                 totalPointsEl.classList.remove('loading');
                 remainingPointsEl.classList.remove('loading');
                 processedTasksEl.classList.remove('loading');
+                totalOriginalEstimateEl.classList.remove('loading');
+                timeSpentEl.classList.remove('loading');
                 setLoadingState(false);
             }
         });
@@ -156,6 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
             totalPointsEl.classList.remove('loading');
             remainingPointsEl.classList.remove('loading');
             processedTasksEl.classList.remove('loading');
+            totalOriginalEstimateEl.classList.remove('loading');
+            timeSpentEl.classList.remove('loading');
 
             // Display total story points
             const total = request.total !== undefined ? request.total : 0;
