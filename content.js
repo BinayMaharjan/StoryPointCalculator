@@ -91,6 +91,50 @@
         return false;
     }
 
+    // Helper to determine if a table row or issue is an extra log task (indicated by DEV in task link/key)
+    function isExtraLogRow(row) {
+        // 1. Check issue key link in the row
+        const issueKeyLinks = row.querySelectorAll('a[data-testid*="issue-key"], a[data-testid*="issue-cells.issue-key"], a[href*="/browse/"]');
+        for (const link of issueKeyLinks) {
+            const href = (link.getAttribute('href') || '').toUpperCase();
+            const text = (link.textContent || '').trim().toUpperCase();
+            const ariaLabel = (link.getAttribute('aria-label') || '').toUpperCase();
+            if (href.includes('/BROWSE/DEV') || text.startsWith('DEV-') || text.includes('DEV-') || ariaLabel.includes('DEV-') || /\bDEV-\d+\b/i.test(text)) {
+                return true;
+            }
+        }
+
+        // 2. Fallback: inspect any link in the row
+        const allLinks = row.querySelectorAll('a');
+        for (const link of allLinks) {
+            const href = (link.getAttribute('href') || '').toUpperCase();
+            const text = (link.textContent || '').trim().toUpperCase();
+            if (href.includes('/BROWSE/DEV') || /\bDEV-\d+\b/i.test(text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Helper for single issue view fallback
+    function isExtraLogIssue() {
+        const issueKeyEl = document.querySelector('[data-testid="issue-field-key.ui.debug.info-element"], a[href*="/browse/"]');
+        if (issueKeyEl) {
+            const text = (issueKeyEl.textContent || '').trim().toUpperCase();
+            const href = (issueKeyEl.getAttribute('href') || '').toUpperCase();
+            if (text.includes('DEV-') || href.includes('/BROWSE/DEV') || /\bDEV-\d+\b/i.test(text)) {
+                return true;
+            }
+        }
+        if (typeof window !== 'undefined' && window.location && window.location.pathname) {
+            if (/\/browse\/DEV-/i.test(window.location.pathname)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Function to calculate story points and time tracking from current DOM
     function calculateStoryPoints(processedElements) {
         let total = 0;
@@ -99,6 +143,8 @@
         let remainingCount = 0;
         let bugCount = 0;
         let bugStoryPoints = 0;
+        let extraLogCount = 0;
+        let extraLogStoryPoints = 0;
         const newProcessed = new Set();
 
         const indices = getColumnIndices();
@@ -118,6 +164,12 @@
                     bugCount++;
                 }
 
+                // Detect extra log tasks (DEV in task link)
+                const isExtraLog = isExtraLogRow(row);
+                if (isExtraLog) {
+                    extraLogCount++;
+                }
+
                 const cells = row.querySelectorAll('td');
 
                 // Story Points
@@ -128,6 +180,9 @@
                         total += points;
                         if (isBug) {
                             bugStoryPoints += points;
+                        }
+                        if (isExtraLog) {
+                            extraLogStoryPoints += points;
                         }
                     } else if (text === 'None' || text === '') {
                         remainingCount++;
@@ -207,6 +262,12 @@
                     bugStoryPoints = total;
                 }
             }
+
+            // Check if single issue view is an extra log
+            if (isExtraLogIssue()) {
+                extraLogCount = 1;
+                extraLogStoryPoints = total;
+            }
         }
 
         return { 
@@ -216,6 +277,8 @@
             remainingCount, 
             bugCount,
             bugStoryPoints,
+            extraLogCount,
+            extraLogStoryPoints,
             newProcessed, 
             processedCount: processedElements.size 
         };
@@ -254,6 +317,8 @@
         let accumulatedRemaining = 0;
         let accumulatedBugs = 0;
         let accumulatedBugStoryPoints = 0;
+        let accumulatedExtraLogs = 0;
+        let accumulatedExtraLogStoryPoints = 0;
         let scrollAttempts = 0;
         const maxScrollAttempts = 200; // Prevent infinite loops
         const scrollDelay = 400; // Wait 400ms between scrolls for content to load
@@ -272,6 +337,8 @@
                 remainingCount: result.remainingCount, 
                 bugs: result.bugCount,
                 bugStoryPoints: result.bugStoryPoints,
+                extraLogs: result.extraLogCount,
+                extraLogPoints: result.extraLogStoryPoints,
                 processedCount: result.processedCount 
             };
         }
@@ -294,6 +361,8 @@
             accumulatedRemaining += result.remainingCount;
             accumulatedBugs += result.bugCount;
             accumulatedBugStoryPoints += result.bugStoryPoints;
+            accumulatedExtraLogs += result.extraLogCount;
+            accumulatedExtraLogStoryPoints += result.extraLogStoryPoints;
 
             // If no new data found, increment counter
             if (result.newProcessed.size === 0) {
@@ -319,6 +388,8 @@
                 accumulatedRemaining += finalResult.remainingCount;
                 accumulatedBugs += finalResult.bugCount;
                 accumulatedBugStoryPoints += finalResult.bugStoryPoints;
+                accumulatedExtraLogs += finalResult.extraLogCount;
+                accumulatedExtraLogStoryPoints += finalResult.extraLogStoryPoints;
                 break;
             }
 
@@ -346,6 +417,8 @@
         accumulatedRemaining += finalResult.remainingCount;
         accumulatedBugs += finalResult.bugCount;
         accumulatedBugStoryPoints += finalResult.bugStoryPoints;
+        accumulatedExtraLogs += finalResult.extraLogCount;
+        accumulatedExtraLogStoryPoints += finalResult.extraLogStoryPoints;
 
         return { 
             total: accumulatedTotal, 
@@ -354,6 +427,8 @@
             remainingCount: accumulatedRemaining, 
             bugs: accumulatedBugs,
             bugStoryPoints: accumulatedBugStoryPoints,
+            extraLogs: accumulatedExtraLogs,
+            extraLogPoints: accumulatedExtraLogStoryPoints,
             processedCount: processedElements.size 
         };
     }
@@ -361,7 +436,7 @@
     // Main execution: Load all data incrementally and accumulate totals
     (async () => {
         try {
-            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, bugs, bugStoryPoints, processedCount } = await loadAllTableData();
+            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, bugs, bugStoryPoints, extraLogs, extraLogPoints, processedCount } = await loadAllTableData();
             // Send totals back to the popup.js
             chrome.runtime.sendMessage({
                 action: "sendTotal",
@@ -371,13 +446,15 @@
                 remaining: remainingCount,
                 processed: processedCount,
                 bugs: bugs,
-                bugStoryPoints: bugStoryPoints
+                bugStoryPoints: bugStoryPoints,
+                extraLogs: extraLogs,
+                extraLogPoints: extraLogPoints
             });
         } catch (error) {
             console.error("Storypoint calculation error:", error);
             // Fallback: calculate with whatever is available
             const processedElements = new Set();
-            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, bugCount, bugStoryPoints, processedCount } = calculateStoryPoints(processedElements);
+            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, bugCount, bugStoryPoints, extraLogCount, extraLogStoryPoints, processedCount } = calculateStoryPoints(processedElements);
             chrome.runtime.sendMessage({
                 action: "sendTotal",
                 total: total,
@@ -386,7 +463,9 @@
                 remaining: remainingCount,
                 processed: processedCount,
                 bugs: bugCount,
-                bugStoryPoints: bugStoryPoints
+                bugStoryPoints: bugStoryPoints,
+                extraLogs: extraLogCount,
+                extraLogPoints: extraLogStoryPoints
             });
         }
     })();

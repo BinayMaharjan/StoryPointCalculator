@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const processedTasksEl = document.getElementById('processedTasks');
     const totalBugsEl = document.getElementById('totalBugs');
     const totalBugStoryPointsEl = document.getElementById('totalBugStoryPoints');
+    const totalExtraLogsEl = document.getElementById('totalExtraLogs');
+    const totalExtraLogPointsEl = document.getElementById('totalExtraLogPoints');
     const totalOriginalEstimateEl = document.getElementById('totalOriginalEstimate');
     const timeSpentEl = document.getElementById('timeSpent');
     const reloadBtn = document.getElementById('reloadBtn');
@@ -136,6 +138,19 @@ document.addEventListener('DOMContentLoaded', () => {
             totalBugStoryPointsEl.textContent = formattedBugSP;
         }
 
+        // Display total extra logs count
+        if (totalExtraLogsEl) {
+            const extraLogs = data.extraLogs !== undefined && data.extraLogs !== null ? data.extraLogs : 0;
+            totalExtraLogsEl.textContent = extraLogs.toString();
+        }
+
+        // Display extra log story points
+        if (totalExtraLogPointsEl) {
+            const extraLogPts = data.extraLogPoints !== undefined && data.extraLogPoints !== null ? data.extraLogPoints : 0;
+            const formattedExtraLogPts = extraLogPts % 1 === 0 ? extraLogPts.toString() : extraLogPts.toFixed(2);
+            totalExtraLogPointsEl.textContent = formattedExtraLogPts;
+        }
+
         // Saved calculation badge
         if (savedBadgeEl && savedTimeEl) {
             if (data.timestamp || data.savedAt) {
@@ -171,6 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
             processed: data.processed !== undefined ? data.processed : 0,
             bugs: data.bugs !== undefined ? data.bugs : 0,
             bugStoryPoints: data.bugStoryPoints !== undefined ? data.bugStoryPoints : 0,
+            extraLogs: data.extraLogs !== undefined ? data.extraLogs : 0,
+            extraLogPoints: data.extraLogPoints !== undefined ? data.extraLogPoints : 0,
             timestamp: formattedDateTime,
             savedAt: now.getTime()
         };
@@ -378,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
             processedTasksEl.textContent = '-';
             if (totalBugsEl) totalBugsEl.textContent = '-';
             if (totalBugStoryPointsEl) totalBugStoryPointsEl.textContent = '-';
+            if (totalExtraLogsEl) totalExtraLogsEl.textContent = '-';
+            if (totalExtraLogPointsEl) totalExtraLogPointsEl.textContent = '-';
             totalOriginalEstimateEl.textContent = '-';
             timeSpentEl.textContent = '-';
 
