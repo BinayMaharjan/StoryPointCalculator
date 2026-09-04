@@ -52,6 +52,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Format timestamp with date and time (e.g., "Sep 4, 10:42 AM")
+    function formatSavedDateTime(dateInput) {
+        if (!dateInput) return '';
+        const d = typeof dateInput === 'number' || typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+        if (isNaN(d.getTime())) return typeof dateInput === 'string' ? dateInput : '';
+
+        const now = new Date();
+        const isSameYear = d.getFullYear() === now.getFullYear();
+        const datePart = d.toLocaleDateString(undefined, isSameYear
+            ? { month: 'short', day: 'numeric' }
+            : { month: 'short', day: 'numeric', year: 'numeric' }
+        );
+        const timePart = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `${datePart}, ${timePart}`;
+    }
+
     // Render calculation results into DOM
     function renderResults(data, animate = true) {
         totalPointsEl.classList.remove('loading');
@@ -122,9 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Saved calculation badge
         if (savedBadgeEl && savedTimeEl) {
-            if (data.timestamp) {
+            if (data.timestamp || data.savedAt) {
                 savedBadgeEl.classList.remove('hidden');
-                savedTimeEl.textContent = `Saved: ${data.timestamp}`;
+                const displayTime = data.savedAt ? formatSavedDateTime(data.savedAt) : data.timestamp;
+                savedTimeEl.textContent = `Saved: ${displayTime}`;
             } else {
                 savedBadgeEl.classList.add('hidden');
             }
@@ -144,7 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Persist calculation results to storage
     async function saveCalculation(data) {
-        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const now = new Date();
+        const formattedDateTime = formatSavedDateTime(now);
         const payload = {
             total: data.total !== undefined ? data.total : 0,
             originalEstimate: data.originalEstimate !== undefined ? data.originalEstimate : 0,
@@ -153,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
             processed: data.processed !== undefined ? data.processed : 0,
             bugs: data.bugs !== undefined ? data.bugs : 0,
             bugStoryPoints: data.bugStoryPoints !== undefined ? data.bugStoryPoints : 0,
-            timestamp: timeString,
-            savedAt: Date.now()
+            timestamp: formattedDateTime,
+            savedAt: now.getTime()
         };
 
         try {
@@ -373,10 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === "sendTotal") {
             setLoadingState(false);
-            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const now = new Date();
+            const formattedDateTime = formatSavedDateTime(now);
             const dataWithTime = {
                 ...request,
-                timestamp: timeString
+                timestamp: formattedDateTime,
+                savedAt: now.getTime()
             };
 
             renderResults(dataWithTime, true);
