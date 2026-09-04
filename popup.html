@@ -15,116 +15,177 @@
 
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 w-[340px]">
 
-    <div class="flex flex-col p-6 space-y-5">
+    <div class="flex flex-col p-4 space-y-3">
         <!-- Header -->
-        <div class="flex items-center justify-center space-x-2">
-            <div class="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center shadow-sm">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                    </path>
-                </svg>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-5 h-5 rounded-lg flex items-center justify-center shadow-xs">
+                    <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                </div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                    Story Points
+                </h1>
             </div>
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                Story Points
-            </h1>
+            <div class="flex items-center gap-1.5">
+                 <button id="reloadBtn"
+                    class="cursor-pointer p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-gray-100 focus:outline-none transition-all duration-150 flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]"
+                    title="Reload Jira Tab">
+                    <svg id="reloadIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                </button>
+                <button id="calculateBtn"
+                    class="cursor-pointer px-3 py-1.5 font-semibold text-white bg-blue-500 rounded-lg shadow-xs hover:bg-blue-600 focus:outline-none transition-all duration-150 flex items-center space-x-1.5 text-xs hover:scale-[1.02] active:scale-[0.98]">
+                    <svg id="calculateIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                    <span id="calculateText">Calculate</span>
+                </button>
+            </div>
         </div>
 
         <!-- Result Cards -->
-        <div class="space-y-3">
+        <div class="space-y-2.5">
             <!-- Total Story Points Card -->
-            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-                <div class="flex items-center justify-center gap-4  mb-2 ">
-                    <p class="text-xs font-medium text-gray-500 uppercase tracking-widertext-center">Total Story
-                        Points</p>
-                    <button id="copyBtn"
-                        class="hidden cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                        title="Copy total points">
-                        <svg id="copyIcon" class="w-5 h-5 text-gray-500 hover:text-indigo-600 transition-colors"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                    </button>
+            <div class="bg-white rounded-xl shadow-xs p-3 border border-gray-100">
+                <div class="flex items-center justify-between px-1 mb-1">
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Total Story Points</p>
+                    <div class="flex items-center space-x-1">
+                        <button id="copyBtn"
+                            class="hidden cursor-pointer p-1 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
+                            title="Copy total points">
+                            <svg id="copyIcon" class="w-4 h-4 text-gray-400 hover:text-indigo-600 transition-colors"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </button>
+                        <button id="clearBtn"
+                            class="hidden cursor-pointer p-1 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
+                            title="Clear saved calculation">
+                            <svg id="clearIcon" class="w-4 h-4 text-gray-400 hover:text-rose-500 transition-colors"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
                     <!-- Force include dynamic classes -->
-                    <div class="hidden text-green-500 text-red-500"></div>
+                    <div class="hidden text-red-500 text-rose-500"></div>
                 </div>
-                <div class="flex items-baseline justify-center space-x-1">
+                <div class="flex items-baseline justify-center space-x-1 py-0.5">
                     <p id="totalPoints"
-                        class="text-5xl font-medium bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                         -</p>
                 </div>
+                <div id="savedBadge" class="hidden mt-1 flex items-center justify-center space-x-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    <span id="savedTime" class="text-[10px] text-gray-400 font-medium">Saved calculation</span>
+                </div>
             </div>
-            <!-- Remaining Story Points Card -->
-            <div class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100 divide-y divide-gray-100 space-y-1">
-                <div class="flex items-center gap-4 justify-between pb-1">
-                    <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+
+            <!-- Detailed Metrics Card -->
+            <div class="bg-white rounded-xl shadow-xs px-3.5 py-1.5 border border-gray-100 divide-y divide-gray-100 text-xs">
+                <!-- Remaining Tasks -->
+                <div class="flex items-center justify-between py-1.5">
+                    <div>
+                        <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
                         Remaining Tasks
-                    </p>
-                    <p id="remainingPoints" class="w-14 text-red-500 flex-shrink-0 text-base">
+                    </span>
+                        <span class="block text-[9px] text-gray-400 font-normal leading-none">To add story point</span>
+                    </div>
+                    
+                    <span id="remainingPoints" class="w-14 text-right text-red-500 font-semibold text-xs">
                         -
-                    </p>
+                    </span>
                 </div>
                 <!-- Processed Tasks Card -->
-                <div class="flex items-center gap-4 justify-between pb-1">
-                    <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
                         Total Tasks
-                    </p>
-                    <p id="processedTasks" class="w-14 text-gray-500 flex-shrink-0 text-base">
+                    </span>
+                    <span id="processedTasks" class="w-14 text-right text-gray-600 font-semibold text-xs">
                         -
-                    </p>
+                    </span>
+                </div>
+                <!-- Total Bugs Card -->
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                        Total Bugs
+                    </span>
+                    <span id="totalBugs" class="w-14 text-right text-rose-500 font-semibold text-xs">
+                        -
+                    </span>
+                </div>
+                <!-- Bug Story Points Card -->
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                        Bug Story Points
+                    </span>
+                    <span id="totalBugStoryPoints" class="w-14 text-right text-rose-500 font-semibold text-xs">
+                        -
+                    </span>
+                </div>
+                <!-- Total Extra Logs Card -->
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                        Total Extra Logs
+                    </span>
+                    <span id="totalExtraLogs" class="w-14 text-right text-amber-600 font-semibold text-xs">
+                        -
+                    </span>
+                </div>
+                <!-- Extra Log Points Card -->
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                        Extra Log Points
+                    </span>
+                    <span id="totalExtraLogPoints" class="w-14 text-right text-amber-600 font-semibold text-xs">
+                        -
+                    </span>
                 </div>
                 <!-- Monthly Average Time Card -->
-                <div class="flex items-center gap-4 justify-between pb-1">
-                    <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Monthly Average Time
-                        <span class="text-[10px] text-gray-400">6.5h per day * 22 days</span>
-                    </p>
-                    <p id="monthlyAverageTime"
-                        class="w-14 flex-shrink-0 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        143h
-                    </p>
+                <div class="flex items-center justify-between py-1.5">
+                    <div>
+                        <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                            Monthly Average
+                        </span>
+                        <span class="block text-[9px] text-gray-400 font-normal leading-none">6.4h/day * 22 days</span>
+                    </div>
+                    <span id="monthlyAverageTime"
+                        class="w-14 text-right font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-xs">
+                        140h
+                    </span>
                 </div>
                 <!-- Total original estimate Card -->
-                <div class="flex items-center gap-4 justify-between pb-1">
-                    <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total original estimate
-                    </p>
-                    <p id="totalOriginalEstimate" class="w-14 text-gray-500 flex-shrink-0 text-base">
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                        Original Estimate
+                    </span>
+                    <span id="totalOriginalEstimate" class="w-14 text-right text-gray-600 font-semibold text-xs">
                         -
-                    </p>
+                    </span>
                 </div>
                 <!-- Time spent Card -->
-                <div class="flex items-center gap-4 justify-between pb-1">
-                    <p class="flex-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time spent
-                    </p>
-                    <p id="timeSpent" class="w-14 text-gray-500 flex-shrink-0 text-base">
+                <div class="flex items-center justify-between py-1.5">
+                    <span class="font-medium text-gray-500 uppercase tracking-wider text-[11px]">
+                        Time Spent
+                    </span>
+                    <span id="timeSpent" class="w-14 text-right text-gray-600 font-semibold text-xs">
                         -
-                    </p>
+                    </span>
                 </div>
             </div>
-        </div>
-        <!-- Calculate Button -->
-        <div class="flex item-center gap-4">
-            <button id="calculateBtn"
-                class="cursor-pointer flex-1 w-full px-6 py-3.5 font-semibold text-white bg-blue-500 rounded-xl shadow-sm hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2">
-                <svg id="calculateIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                    </path>
-                </svg>
-                <span id="calculateText">Calculate Total</span>
-            </button>
-            <button id="reloadBtn"
-                class="cursor-pointer px-6 py-3.5 font-semibold text-white bg-blue-500 rounded-xl shadow-sm hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2">
-                <svg id="reloadIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                    </path>
-                </svg>
-            </button>
         </div>
     </div>
 
