@@ -56,12 +56,49 @@
         return indices;
     }
 
+    // Helper to determine if a table row or issue is a bug or sub-task bug
+    function isBugRow(row) {
+        // 1. Check specific issue type icon selectors
+        const typeImg = row.querySelector('img[data-vc="native-issue-table-ui-icon-cell-img"]')
+            || row.querySelector('[data-vc="merged-cell"] img[alt]')
+            || row.querySelector('[data-testid*="issue-row.merged-cell"] img[alt]')
+            || row.querySelector('td.issuetype img[alt]')
+            || row.querySelector('td[data-cell-type="issuetype"] img[alt]');
+
+        if (typeImg) {
+            const alt = (typeImg.getAttribute('alt') || '').toLowerCase();
+            const title = (typeImg.getAttribute('title') || '').toLowerCase();
+            const ariaLabel = (typeImg.getAttribute('aria-label') || '').toLowerCase();
+            if (alt.includes('bug') || title.includes('bug') || ariaLabel.includes('bug')) {
+                return true;
+            }
+        }
+
+        // 2. Check the first 2 cells (checkbox and merged cell with key/type)
+        const cells = row.querySelectorAll('td');
+        for (let i = 0; i < Math.min(cells.length, 2); i++) {
+            const imgs = cells[i].querySelectorAll('img');
+            for (const img of imgs) {
+                const alt = (img.getAttribute('alt') || '').toLowerCase();
+                const title = (img.getAttribute('title') || '').toLowerCase();
+                const ariaLabel = (img.getAttribute('aria-label') || '').toLowerCase();
+                if (alt.includes('bug') || title.includes('bug') || ariaLabel.includes('bug')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     // Function to calculate story points and time tracking from current DOM
     function calculateStoryPoints(processedElements) {
         let total = 0;
         let totalOriginalEstimate = 0;
         let totalTimeSpent = 0;
         let remainingCount = 0;
+        let bugCount = 0;
+        let bugStoryPoints = 0;
         const newProcessed = new Set();
 
         const indices = getColumnIndices();
@@ -75,13 +112,23 @@
                 processedElements.add(elementId);
                 newProcessed.add(elementId);
 
+                // Detect bugs and sub bugs
+                const isBug = isBugRow(row);
+                if (isBug) {
+                    bugCount++;
+                }
+
                 const cells = row.querySelectorAll('td');
 
                 // Story Points
                 if (indices.storyPoints !== -1 && cells[indices.storyPoints]) {
                     const text = cells[indices.storyPoints].textContent.trim();
                     if (text && text !== 'None' && !isNaN(parseFloat(text))) {
-                        total += parseFloat(text);
+                        const points = parseFloat(text);
+                        total += points;
+                        if (isBug) {
+                            bugStoryPoints += points;
+                        }
                     } else if (text === 'None' || text === '') {
                         remainingCount++;
                     }
@@ -149,6 +196,17 @@
 
                 totalTimeSpent += parseJiraTime(text);
             });
+
+            // Check if single issue view is a bug
+            const issueTypeImg = document.querySelector('[data-testid="issue.views.issue-base.foundation.change-issue-type.button"] img, [data-testid*="issue-type"] img, img[data-vc="native-issue-table-ui-icon-cell-img"]');
+            if (issueTypeImg) {
+                const alt = (issueTypeImg.getAttribute('alt') || '').toLowerCase();
+                const title = (issueTypeImg.getAttribute('title') || '').toLowerCase();
+                if (alt.includes('bug') || title.includes('bug')) {
+                    bugCount = 1;
+                    bugStoryPoints = total;
+                }
+            }
         }
 
         return { 
@@ -156,6 +214,8 @@
             totalOriginalEstimate,
             totalTimeSpent,
             remainingCount, 
+            bugCount,
+            bugStoryPoints,
             newProcessed, 
             processedCount: processedElements.size 
         };
@@ -192,6 +252,8 @@
         let accumulatedOriginalEstimate = 0;
         let accumulatedTimeSpent = 0;
         let accumulatedRemaining = 0;
+        let accumulatedBugs = 0;
+        let accumulatedBugStoryPoints = 0;
         let scrollAttempts = 0;
         const maxScrollAttempts = 200; // Prevent infinite loops
         const scrollDelay = 400; // Wait 400ms between scrolls for content to load
@@ -208,6 +270,8 @@
                 totalOriginalEstimate: result.totalOriginalEstimate,
                 totalTimeSpent: result.totalTimeSpent,
                 remainingCount: result.remainingCount, 
+                bugs: result.bugCount,
+                bugStoryPoints: result.bugStoryPoints,
                 processedCount: result.processedCount 
             };
         }
@@ -228,6 +292,8 @@
             accumulatedOriginalEstimate += result.totalOriginalEstimate;
             accumulatedTimeSpent += result.totalTimeSpent;
             accumulatedRemaining += result.remainingCount;
+            accumulatedBugs += result.bugCount;
+            accumulatedBugStoryPoints += result.bugStoryPoints;
 
             // If no new data found, increment counter
             if (result.newProcessed.size === 0) {
@@ -251,6 +317,8 @@
                 accumulatedOriginalEstimate += finalResult.totalOriginalEstimate;
                 accumulatedTimeSpent += finalResult.totalTimeSpent;
                 accumulatedRemaining += finalResult.remainingCount;
+                accumulatedBugs += finalResult.bugCount;
+                accumulatedBugStoryPoints += finalResult.bugStoryPoints;
                 break;
             }
 
@@ -276,12 +344,16 @@
         accumulatedOriginalEstimate += finalResult.totalOriginalEstimate;
         accumulatedTimeSpent += finalResult.totalTimeSpent;
         accumulatedRemaining += finalResult.remainingCount;
+        accumulatedBugs += finalResult.bugCount;
+        accumulatedBugStoryPoints += finalResult.bugStoryPoints;
 
         return { 
             total: accumulatedTotal, 
             totalOriginalEstimate: accumulatedOriginalEstimate,
             totalTimeSpent: accumulatedTimeSpent,
             remainingCount: accumulatedRemaining, 
+            bugs: accumulatedBugs,
+            bugStoryPoints: accumulatedBugStoryPoints,
             processedCount: processedElements.size 
         };
     }
@@ -289,28 +361,32 @@
     // Main execution: Load all data incrementally and accumulate totals
     (async () => {
         try {
-            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, processedCount } = await loadAllTableData();
-            // Send both totals back to the popup.js
+            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, bugs, bugStoryPoints, processedCount } = await loadAllTableData();
+            // Send totals back to the popup.js
             chrome.runtime.sendMessage({
                 action: "sendTotal",
                 total: total,
                 originalEstimate: totalOriginalEstimate,
                 timeSpent: totalTimeSpent,
                 remaining: remainingCount,
-                processed: processedCount
+                processed: processedCount,
+                bugs: bugs,
+                bugStoryPoints: bugStoryPoints
             });
         } catch (error) {
             console.error("Storypoint calculation error:", error);
             // Fallback: calculate with whatever is available
             const processedElements = new Set();
-            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, processedCount } = calculateStoryPoints(processedElements);
+            const { total, totalOriginalEstimate, totalTimeSpent, remainingCount, bugCount, bugStoryPoints, processedCount } = calculateStoryPoints(processedElements);
             chrome.runtime.sendMessage({
                 action: "sendTotal",
                 total: total,
                 originalEstimate: totalOriginalEstimate,
                 timeSpent: totalTimeSpent,
                 remaining: remainingCount,
-                processed: processedCount
+                processed: processedCount,
+                bugs: bugCount,
+                bugStoryPoints: bugStoryPoints
             });
         }
     })();

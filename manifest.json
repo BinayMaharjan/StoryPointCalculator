@@ -5,7 +5,8 @@
     "description": "Calculates the total story points on the current Jira filter page.",
     "permissions": [
       "activeTab",
-      "scripting"
+      "scripting",
+      "storage"
     ],
     "action": {
       "default_popup": "popup.html",
