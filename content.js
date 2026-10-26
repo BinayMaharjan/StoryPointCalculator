@@ -75,7 +75,7 @@
         }
 
         // 2. Check the first 2 cells (checkbox and merged cell with key/type)
-        const cells = row.querySelectorAll('td');
+        const cells = row.querySelectorAll(':scope > th, :scope > td');
         for (let i = 0; i < Math.min(cells.length, 2); i++) {
             const imgs = cells[i].querySelectorAll('img');
             for (const img of imgs) {
@@ -170,7 +170,7 @@
                     extraLogCount++;
                 }
 
-                const cells = row.querySelectorAll('td');
+                const cells = row.querySelectorAll(':scope > th, :scope > td');
 
                 // Story Points
                 if (indices.storyPoints !== -1 && cells[indices.storyPoints]) {
