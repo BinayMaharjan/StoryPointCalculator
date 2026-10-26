@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedTimeEl = document.getElementById('savedTime');
     const roleSelectEl = document.getElementById('roleSelect');
     const manageRolesBtn = document.getElementById('manageRolesBtn');
+    const manageRolesIconEl = document.getElementById('manageRolesIcon');
     const roleManagerEl = document.getElementById('roleManager');
     const roleNameInput = document.getElementById('roleNameInput');
     const roleWeightInput = document.getElementById('roleWeightInput');
@@ -32,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let roles = [];
     let activeRoleId = null;
     let lastTotal = null;
+    let editingRoleId = null;
+
+    const EDIT_ICON_PATH = 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z';
+    const CHECK_ICON_PATH = 'M5 13l4 4L19 7';
 
     // Helper function to show loading state
     function setLoadingState(isLoading) {
@@ -246,6 +251,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
+    async function updateRole(id, name, weight) {
+        const trimmedName = (name || '').trim();
+        const parsedWeight = parseFloat(weight);
+        if (!trimmedName || isNaN(parsedWeight) || parsedWeight <= 0) return false;
+
+        roles = roles.map(role => role.id === id ? { ...role, name: trimmedName, weight: parsedWeight } : role);
+        editingRoleId = null;
+        await saveRoles();
+        refreshTaskWeight();
+        return true;
+    }
+
     async function deleteRole(id) {
         roles = roles.filter(role => role.id !== id);
         if (activeRoleId === id) {
@@ -274,10 +291,80 @@ document.addEventListener('DOMContentLoaded', () => {
         roleSelectEl.classList.toggle('hidden', roles.length === 0);
     }
 
+    function createIconButton(pathD, title, hoverClass, onClick) {
+        const button = document.createElement('button');
+        button.className = `cursor-pointer text-gray-400 ${hoverClass} focus:outline-none`;
+        button.title = title;
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'w-3.5 h-3.5');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('viewBox', '0 0 24 24');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', pathD);
+
+        svg.appendChild(path);
+        button.appendChild(svg);
+        button.addEventListener('click', onClick);
+        return button;
+    }
+
+    // Inline edit form for a single role row
+    function renderRoleEditItem(role) {
+        const item = document.createElement('li');
+        item.className = 'flex items-center gap-1.5 text-xs';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = role.name;
+        nameInput.className = 'flex-1 min-w-0 text-xs text-gray-700 border border-gray-200 rounded-md px-2 py-0.5 focus:outline-none focus:border-blue-400';
+
+        const weightInput = document.createElement('input');
+        weightInput.type = 'number';
+        weightInput.min = '0';
+        weightInput.step = '0.01';
+        weightInput.value = role.weight;
+        weightInput.className = 'w-16 text-xs text-gray-700 border border-gray-200 rounded-md px-2 py-0.5 focus:outline-none focus:border-blue-400';
+
+        const save = () => updateRole(role.id, nameInput.value, weightInput.value);
+        const cancel = () => {
+            editingRoleId = null;
+            renderRoleList();
+        };
+
+        [nameInput, weightInput].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') save();
+                if (e.key === 'Escape') cancel();
+            });
+        });
+
+        const saveBtn = createIconButton(CHECK_ICON_PATH, 'Save role', 'hover:text-green-500', save);
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'cursor-pointer text-gray-400 hover:text-rose-500 focus:outline-none';
+        cancelBtn.title = 'Cancel';
+        cancelBtn.textContent = '×';
+        cancelBtn.addEventListener('click', cancel);
+
+        item.append(nameInput, weightInput, saveBtn, cancelBtn);
+        setTimeout(() => nameInput.focus(), 0);
+        return item;
+    }
+
     // Rebuild the role list inside the manage panel
     function renderRoleList() {
         roleListEl.replaceChildren();
         roles.forEach(role => {
+            if (role.id === editingRoleId) {
+                roleListEl.appendChild(renderRoleEditItem(role));
+                return;
+            }
+
             const item = document.createElement('li');
             item.className = 'flex items-center justify-between text-xs text-gray-600 px-1';
 
@@ -292,16 +379,32 @@ document.addEventListener('DOMContentLoaded', () => {
             weight.className = 'font-semibold text-gray-700';
             weight.textContent = formatNumber(role.weight);
 
+            const editBtn = createIconButton(EDIT_ICON_PATH, 'Edit role', 'hover:text-blue-500', () => {
+                editingRoleId = role.id;
+                renderRoleList();
+            });
+
             const removeBtn = document.createElement('button');
             removeBtn.className = 'cursor-pointer text-gray-400 hover:text-rose-500 focus:outline-none';
             removeBtn.title = 'Remove role';
             removeBtn.textContent = '×';
             removeBtn.addEventListener('click', () => deleteRole(role.id));
 
-            right.append(weight, removeBtn);
+            right.append(weight, editBtn, removeBtn);
             item.append(label, right);
             roleListEl.appendChild(item);
         });
+    }
+
+    // Open/close the role manager; header icon shows a tick while editing
+    function setRoleManagerOpen(isOpen) {
+        roleManagerEl.classList.toggle('hidden', !isOpen);
+        manageRolesIconEl.setAttribute('d', isOpen ? CHECK_ICON_PATH : EDIT_ICON_PATH);
+        manageRolesBtn.title = isOpen ? 'Done editing' : 'Manage roles & task weight';
+        if (!isOpen && editingRoleId !== null) {
+            editingRoleId = null;
+            renderRoleList();
+        }
     }
 
     // Show achieved story points as a percentage of the active role's task weight
@@ -408,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRoles().then(() => {
         refreshTaskWeight();
         if (roles.length === 0) {
-            roleManagerEl.classList.remove('hidden');
+            setRoleManagerOpen(true);
         }
         loadSavedCalculation();
     });
@@ -418,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     manageRolesBtn.addEventListener('click', () => {
-        roleManagerEl.classList.toggle('hidden');
+        setRoleManagerOpen(roleManagerEl.classList.contains('hidden'));
     });
 
     async function handleAddRole() {
