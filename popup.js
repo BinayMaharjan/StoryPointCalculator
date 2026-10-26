@@ -17,6 +17,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('clearBtn');
     const savedBadgeEl = document.getElementById('savedBadge');
     const savedTimeEl = document.getElementById('savedTime');
+    const roleSelectEl = document.getElementById('roleSelect');
+    const manageRolesBtn = document.getElementById('manageRolesBtn');
+    const roleManagerEl = document.getElementById('roleManager');
+    const roleNameInput = document.getElementById('roleNameInput');
+    const roleWeightInput = document.getElementById('roleWeightInput');
+    const addRoleBtn = document.getElementById('addRoleBtn');
+    const roleListEl = document.getElementById('roleList');
+    const taskWeightPercentEl = document.getElementById('taskWeightPercent');
+    const taskWeightDetailEl = document.getElementById('taskWeightDetail');
+    const taskWeightBarEl = document.getElementById('taskWeightBar');
+
+    // Task weight state: user-defined roles with their 100% target weight
+    let roles = [];
+    let activeRoleId = null;
+    let lastTotal = null;
 
     // Helper function to show loading state
     function setLoadingState(isLoading) {
@@ -86,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? total.toString()
             : total.toFixed(2);
         totalPointsEl.textContent = formattedTotal;
+        lastTotal = total;
 
         // Display original estimate
         const originalEstimate = data.originalEstimate !== undefined && data.originalEstimate !== null ? data.originalEstimate : 0;
@@ -162,6 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        renderTaskWeight();
+
         // Animate cards if requested
         if (animate) {
             const resultCards = document.querySelectorAll('.bg-white.rounded-xl, .bg-white.rounded-2xl');
@@ -171,6 +189,152 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.classList.remove('result-animate');
                 }, 300);
             });
+        }
+    }
+
+    function formatNumber(value) {
+        return value % 1 === 0 ? value.toString() : value.toFixed(2);
+    }
+
+    function getActiveRole() {
+        return roles.find(role => role.id === activeRoleId) || null;
+    }
+
+    // Load user-defined roles and the selected role from storage
+    async function loadRoles() {
+        try {
+            if (chrome?.storage?.local) {
+                const res = await chrome.storage.local.get(['taskWeightRoles', 'activeRoleId']);
+                roles = Array.isArray(res.taskWeightRoles) ? res.taskWeightRoles : [];
+                activeRoleId = res.activeRoleId ?? null;
+            }
+        } catch (e) {
+            console.warn('Failed to load roles from chrome.storage.local:', e);
+        }
+
+        if (!getActiveRole()) {
+            activeRoleId = roles.length > 0 ? roles[0].id : null;
+        }
+    }
+
+    async function saveRoles() {
+        try {
+            if (chrome?.storage?.local) {
+                await chrome.storage.local.set({ taskWeightRoles: roles, activeRoleId: activeRoleId });
+            }
+        } catch (e) {
+            console.warn('chrome.storage.local error:', e);
+        }
+    }
+
+    function refreshTaskWeight() {
+        renderRoleSelect();
+        renderRoleList();
+        renderTaskWeight();
+    }
+
+    async function addRole(name, weight) {
+        const trimmedName = (name || '').trim();
+        const parsedWeight = parseFloat(weight);
+        if (!trimmedName || isNaN(parsedWeight) || parsedWeight <= 0) return false;
+
+        const role = { id: Date.now(), name: trimmedName, weight: parsedWeight };
+        roles.push(role);
+        activeRoleId = role.id;
+        await saveRoles();
+        refreshTaskWeight();
+        return true;
+    }
+
+    async function deleteRole(id) {
+        roles = roles.filter(role => role.id !== id);
+        if (activeRoleId === id) {
+            activeRoleId = roles.length > 0 ? roles[0].id : null;
+        }
+        await saveRoles();
+        refreshTaskWeight();
+    }
+
+    async function setActiveRole(id) {
+        activeRoleId = id;
+        await saveRoles();
+        renderTaskWeight();
+    }
+
+    // Rebuild the role dropdown (textContent only, names are user input)
+    function renderRoleSelect() {
+        roleSelectEl.replaceChildren();
+        roles.forEach(role => {
+            const option = document.createElement('option');
+            option.value = role.id;
+            option.textContent = `${role.name} (${formatNumber(role.weight)})`;
+            option.selected = role.id === activeRoleId;
+            roleSelectEl.appendChild(option);
+        });
+        roleSelectEl.classList.toggle('hidden', roles.length === 0);
+    }
+
+    // Rebuild the role list inside the manage panel
+    function renderRoleList() {
+        roleListEl.replaceChildren();
+        roles.forEach(role => {
+            const item = document.createElement('li');
+            item.className = 'flex items-center justify-between text-xs text-gray-600 px-1';
+
+            const label = document.createElement('span');
+            label.className = 'truncate';
+            label.textContent = role.name;
+
+            const right = document.createElement('div');
+            right.className = 'flex items-center gap-2';
+
+            const weight = document.createElement('span');
+            weight.className = 'font-semibold text-gray-700';
+            weight.textContent = formatNumber(role.weight);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'cursor-pointer text-gray-400 hover:text-rose-500 focus:outline-none';
+            removeBtn.title = 'Remove role';
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', () => deleteRole(role.id));
+
+            right.append(weight, removeBtn);
+            item.append(label, right);
+            roleListEl.appendChild(item);
+        });
+    }
+
+    // Show achieved story points as a percentage of the active role's task weight
+    function renderTaskWeight() {
+        const activeRole = getActiveRole();
+        taskWeightBarEl.classList.remove('bg-red-500', 'bg-amber-500', 'bg-green-500');
+
+        if (!activeRole) {
+            taskWeightPercentEl.textContent = '-';
+            taskWeightDetailEl.textContent = 'Add your role & task weight';
+            taskWeightBarEl.classList.add('bg-red-500');
+            taskWeightBarEl.style.width = '0%';
+            return;
+        }
+
+        if (lastTotal === null || lastTotal === undefined) {
+            taskWeightPercentEl.textContent = '-';
+            taskWeightDetailEl.textContent = `- / ${formatNumber(activeRole.weight)}`;
+            taskWeightBarEl.classList.add('bg-red-500');
+            taskWeightBarEl.style.width = '0%';
+            return;
+        }
+
+        const percent = (lastTotal / activeRole.weight) * 100;
+        taskWeightPercentEl.textContent = `${percent.toFixed(1)}%`;
+        taskWeightDetailEl.textContent = `${formatNumber(lastTotal)} / ${formatNumber(activeRole.weight)}`;
+        taskWeightBarEl.style.width = `${Math.min(percent, 100)}%`;
+        if (percent >= 100) {
+            taskWeightBarEl.classList.add('bg-green-500');
+        } else if (percent >= 50) {
+            taskWeightBarEl.classList.add('bg-amber-500');
+        } else {
+            taskWeightBarEl.classList.add('bg-red-500');
         }
     }
 
@@ -240,8 +404,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Load any saved calculation on startup
-    loadSavedCalculation();
+    // Load roles first so the saved calculation renders its task weight percentage
+    loadRoles().then(() => {
+        refreshTaskWeight();
+        if (roles.length === 0) {
+            roleManagerEl.classList.remove('hidden');
+        }
+        loadSavedCalculation();
+    });
+
+    roleSelectEl.addEventListener('change', () => {
+        setActiveRole(Number(roleSelectEl.value));
+    });
+
+    manageRolesBtn.addEventListener('click', () => {
+        roleManagerEl.classList.toggle('hidden');
+    });
+
+    async function handleAddRole() {
+        const added = await addRole(roleNameInput.value, roleWeightInput.value);
+        if (added) {
+            roleNameInput.value = '';
+            roleWeightInput.value = '';
+            roleNameInput.focus();
+        }
+    }
+
+    addRoleBtn.addEventListener('click', handleAddRole);
+    [roleNameInput, roleWeightInput].forEach(input => {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAddRole();
+        });
+    });
 
     calculateBtn.addEventListener('click', () => {
         // Clear previous results and show loading
@@ -403,6 +597,9 @@ document.addEventListener('DOMContentLoaded', () => {
             copyBtn.classList.add('hidden');
             clearBtn.classList.add('hidden');
             if (savedBadgeEl) savedBadgeEl.classList.add('hidden');
+
+            lastTotal = null;
+            renderTaskWeight();
         });
     }
 

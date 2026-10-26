@@ -94,6 +94,48 @@
                 </div>
             </div>
 
+            <!-- Task Weight Card -->
+            <div class="bg-white rounded-xl shadow-xs p-3 border border-gray-100">
+                <div class="flex items-center justify-between px-1 mb-1 gap-2">
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Task Weight</p>
+                    <div class="flex items-center gap-1 min-w-0">
+                        <select id="roleSelect"
+                            class="hidden min-w-0 max-w-[150px] text-[11px] text-gray-600 border border-gray-200 rounded-md px-1.5 py-0.5 bg-white focus:outline-none focus:border-blue-400"></select>
+                        <button id="manageRolesBtn"
+                            class="cursor-pointer p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
+                            title="Manage roles & task weight">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-baseline justify-between px-1">
+                    <p id="taskWeightPercent" class="text-2xl font-bold text-gray-800">-</p>
+                    <p id="taskWeightDetail" class="text-[11px] text-gray-400 font-medium">Add your role &amp; task weight</p>
+                </div>
+                <div class="mx-1 mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div id="taskWeightBar" class="h-full rounded-full bg-red-500 transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <!-- Role manager -->
+                <div id="roleManager" class="hidden mt-2.5 pt-2.5 border-t border-gray-100 space-y-2">
+                    <div class="flex items-center gap-1.5">
+                        <input id="roleNameInput" type="text" placeholder="J1 Frontend"
+                            class="flex-1 min-w-0 text-xs text-gray-700 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:border-blue-400">
+                        <input id="roleWeightInput" type="number" min="0" step="0.01" placeholder="54"
+                            class="w-16 text-xs text-gray-700 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:border-blue-400">
+                        <button id="addRoleBtn"
+                            class="cursor-pointer px-2.5 py-1 text-xs font-semibold text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none">
+                            Add
+                        </button>
+                    </div>
+                    <ul id="roleList" class="space-y-1"></ul>
+                </div>
+            </div>
+
             <!-- Detailed Metrics Card -->
             <div class="bg-white rounded-xl shadow-xs px-3.5 py-1.5 border border-gray-100 divide-y divide-gray-100 text-xs">
                 <!-- Remaining Tasks -->
